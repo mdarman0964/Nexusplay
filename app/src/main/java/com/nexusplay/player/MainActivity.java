@@ -115,11 +115,17 @@ public class MainActivity extends AppCompatActivity {
 
         LinearLayout tabs = new LinearLayout(this);
         tabs.setOrientation(0); tabs.setPadding(0, dp(6), 0, dp(6));
-        for (String name : new String[]{"All videos", "Folders", "Recent"}) {
+        String[] tabNames = {"All videos", "Folders", "Recent"};
+        for (int i = 0; i < tabNames.length; i++) {
+            String name = tabNames[i];
             TextView t = label(name, 13, name.equals(tab) ? bg : muted, true);
-            t.setGravity(Gravity.CENTER); t.setBackground(round(name.equals(tab) ? mint : panel, dp(18)));
-            LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(0, dp(36), 1);
-            p.setMargins(0, 0, dp(6), 0); tabs.addView(t, p);
+            t.setGravity(Gravity.CENTER);
+            t.setIncludeFontPadding(false);
+            t.setMinWidth(0);
+            t.setBackground(round(name.equals(tab) ? mint : panel, dp(18)));
+            LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(0, dp(36), 1f);
+            if (i < tabNames.length - 1) p.rightMargin = dp(6);
+            tabs.addView(t, p);
             t.setOnClickListener(v -> { tab = name; buildUi(); render(); });
         }
         root.addView(tabs, lp(-1, dp(42)));
