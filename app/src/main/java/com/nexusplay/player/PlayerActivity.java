@@ -90,7 +90,26 @@ public class PlayerActivity extends AppCompatActivity {
             try {
                 controller = controllerFuture.get(); playerView.setPlayer(controller);
                 if (controller.getMediaItemCount()==0 || !uri.equals(controller.getCurrentMediaItem()==null ? null : controller.getCurrentMediaItem().localConfiguration.uri)) {
-                    controller.setMediaItem(MediaItem.fromUri(uri)); controller.prepare(); controller.play();
+                    java.util.ArrayList<String> playlist = getIntent().getStringArrayListExtra("playlist");
+                    int startIndex = getIntent().getIntExtra("start_index", 0);
+                    java.util.ArrayList<MediaItem> items = new java.util.ArrayList<>();
+                    int selectedIndex = -1;
+                    if (playlist != null) {
+                        for (int i = 0; i < playlist.size(); i++) {
+                            Uri itemUri = Uri.parse(playlist.get(i));
+                            items.add(MediaItem.fromUri(itemUri));
+                            if (uri.equals(itemUri)) selectedIndex = i;
+                        }
+                    }
+                    if (items.isEmpty()) {
+                        items.add(MediaItem.fromUri(uri));
+                        selectedIndex = 0;
+                    } else if (selectedIndex < 0) {
+                        selectedIndex = Math.max(0, Math.min(startIndex, items.size() - 1));
+                    }
+                    controller.setMediaItems(items, selectedIndex, 0L);
+                    controller.prepare();
+                    controller.play();
                 }
             } catch (Exception e) { Toast.makeText(this,"Unable to start playback",Toast.LENGTH_LONG).show(); }
         }, androidx.core.content.ContextCompat.getMainExecutor(this));
