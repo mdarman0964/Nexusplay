@@ -42,7 +42,9 @@ public class PlayerActivity extends AppCompatActivity {
         playerView.setResizeMode(AspectRatioFrameLayout.RESIZE_MODE_FIT);
         root.addView(playerView, new FrameLayout.LayoutParams(-1,-1));
         TextView back = new TextView(this); back.setText("‹  BACK"); back.setTextColor(0xFFFFFFFF); back.setTextSize(13);
-        back.setPadding(24,18,20,18); back.setBackgroundColor(0x66000000);
+        back.setPadding(dp(24),dp(14),dp(20),dp(14));
+        back.setMinWidth(dp(84));
+        back.setGravity(Gravity.CENTER); back.setBackgroundColor(0x66000000);
         root.addView(back,new FrameLayout.LayoutParams(-2,-2,Gravity.TOP|Gravity.START)); back.setOnClickListener(v->finish());
         gestureHint = new TextView(this); gestureHint.setTextColor(-1); gestureHint.setTextSize(14);
         gestureHint.setPadding(18,12,18,12); gestureHint.setBackgroundColor(0x99000000); gestureHint.setVisibility(View.GONE);
