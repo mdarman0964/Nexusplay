@@ -154,8 +154,12 @@ public class MainActivity extends AppCompatActivity {
         try (Cursor c = getContentResolver().query(collection, cols, null, null, MediaStore.Video.Media.DATE_ADDED + " DESC")) {
             if (c != null) while (c.moveToNext()) {
                 long id = c.getLong(0), ms = c.getLong(3), bytes = c.getLong(4);
-                String title = c.getString(1), filename = c.getString(2);
-                if (title == null || title.trim().isEmpty()) title = filename;
+                String filename = c.getString(2);
+                String title = filename;
+                if (title == null || title.trim().isEmpty()) title = c.getString(1);
+                if (title == null || title.trim().isEmpty()) title = "Untitled video";
+                int titleDot = title.lastIndexOf('.');
+                if (titleDot > 0) title = title.substring(0, titleDot);
                 Uri uri = ContentUris.withAppendedId(collection, id);
                 String folder = "Videos";
                 if (Build.VERSION.SDK_INT >= 29) {
@@ -274,7 +278,7 @@ public class MainActivity extends AppCompatActivity {
             .setPositiveButton("Rename", (d, w) -> {
                 String filename = input.getText().toString().trim();
                 if (filename.isEmpty() || filename.equals(".") || filename.equals("..") ||
-                    filename.contains("/") || filename.contains("\\\\") || filename.indexOf('\0') >= 0) {
+                    filename.contains("/") || filename.contains("\\") || filename.indexOf('\0') >= 0) {
                     Toast.makeText(this, "Enter a valid video filename", Toast.LENGTH_SHORT).show();
                     return;
                 }
@@ -375,7 +379,19 @@ public class MainActivity extends AppCompatActivity {
         if (requestCode == 901 && resultCode == RESULT_OK) loadVideos();
     }
     private void play(Video v) {
-        Intent i = new Intent(this, PlayerActivity.class); i.setData(v.uri); i.putExtra("title", v.title); startActivity(i);
+        Intent i = new Intent(this, PlayerActivity.class);
+        i.setData(v.uri);
+        i.putExtra("title", v.title);
+        ArrayList<String> playlist = new ArrayList<>();
+        int startIndex = 0;
+        for (int index = 0; index < videos.size(); index++) {
+            Video item = videos.get(index);
+            playlist.add(item.uri.toString());
+            if (item.uri.equals(v.uri)) startIndex = index;
+        }
+        i.putStringArrayListExtra("playlist", playlist);
+        i.putExtra("start_index", startIndex);
+        startActivity(i);
     }
     private void emptyMessage(String m) {
         if (list == null) return;
