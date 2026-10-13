@@ -18,6 +18,7 @@ import android.os.Bundle;
 import android.provider.MediaStore;
 import android.util.Size;
 import android.view.Gravity;
+import android.view.WindowManager;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageView;
@@ -55,6 +56,7 @@ public class MainActivity extends AppCompatActivity {
 
     @Override protected void onCreate(Bundle state) {
         super.onCreate(state);
+        getWindow().setDecorFitsSystemWindows(true);
         getWindow().setStatusBarColor(bg);
         getWindow().setNavigationBarColor(bg);
         permissionRequest = registerForActivityResult(new ActivityResultContracts.RequestPermission(), ok -> {
@@ -87,7 +89,7 @@ public class MainActivity extends AppCompatActivity {
     private void buildUi() {
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(1);
-        root.setPadding(dp(16), dp(8), dp(16), 0);
+        root.setPadding(dp(16), dp(4), dp(16), 0);
         root.setBackgroundColor(bg);
         LinearLayout top = new LinearLayout(this);
         top.setGravity(Gravity.CENTER_VERTICAL);
@@ -95,7 +97,7 @@ public class MainActivity extends AppCompatActivity {
         top.addView(brand, new LinearLayout.LayoutParams(0, dp(42), 1));
         TextView local = label("●  LOCAL LIBRARY", 10, muted, true);
         top.addView(local);
-        root.addView(top, lp(-1, dp(44)));
+        root.addView(top, lp(-1, dp(52)));
 
         search = new EditText(this);
         search.setSingleLine(true); search.setTextSize(15); search.setTextColor(white); search.setHintTextColor(muted);
@@ -104,7 +106,7 @@ public class MainActivity extends AppCompatActivity {
         root.addView(search, lp(-1, dp(48)));
 
         LinearLayout tabs = new LinearLayout(this);
-        tabs.setOrientation(0); tabs.setPadding(0, dp(12), 0, dp(8));
+        tabs.setOrientation(0); tabs.setPadding(0, dp(6), 0, dp(6));
         for (String name : new String[]{"All videos", "Folders", "Recent"}) {
             TextView t = label(name, 13, name.equals(tab) ? bg : muted, true);
             t.setGravity(Gravity.CENTER); t.setBackground(round(name.equals(tab) ? mint : panel, dp(18)));
@@ -112,7 +114,7 @@ public class MainActivity extends AppCompatActivity {
             p.setMargins(0, 0, dp(6), 0); tabs.addView(t, p);
             t.setOnClickListener(v -> { tab = name; buildUi(); render(); });
         }
-        root.addView(tabs, lp(-1, dp(48)));
+        root.addView(tabs, lp(-1, dp(42)));
         count = label("YOUR LIBRARY", 11, muted, true);
         root.addView(count, lp(-1, dp(28)));
         ScrollView scroll = new ScrollView(this);
