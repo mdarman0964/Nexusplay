@@ -4,6 +4,7 @@ import android.Manifest;
 import android.app.Activity;
 import android.app.RecoverableSecurityException;
 import android.content.ContentUris;
+import android.content.ContentValues;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
@@ -42,7 +43,9 @@ public class MainActivity extends AppCompatActivity {
     private final int bg = 0xFF0B0D14, panel = 0xFF151925, muted = 0xFF8B91A6, white = 0xFFF5F6FC, mint = 0xFF4DE1C1;
     private ActivityResultLauncher<String> permissionRequest;
     private ActivityResultLauncher<IntentSenderRequest> deleteRequest;
-    private Video pendingDelete;
+    private ActivityResultLauncher<IntentSenderRequest> renamePermissionRequest;
+    private Video pendingDelete, pendingRename;
+    private String pendingRenameFilename;
 
     static class Video {
         String title, filename, folder, duration, size;
@@ -60,6 +63,14 @@ public class MainActivity extends AppCompatActivity {
         deleteRequest = registerForActivityResult(new ActivityResultContracts.StartIntentSenderForResult(), result -> {
             if (result.getResultCode() == Activity.RESULT_OK) { Toast.makeText(this, "Video deleted", Toast.LENGTH_SHORT).show(); loadVideos(); }
             pendingDelete = null;
+        });
+        renamePermissionRequest = registerForActivityResult(new ActivityResultContracts.StartIntentSenderForResult(), result -> {
+            if (result.getResultCode() == Activity.RESULT_OK && pendingRename != null && pendingRenameFilename != null) {
+                performRename(pendingRename, pendingRenameFilename);
+            } else {
+                pendingRename = null;
+                pendingRenameFilename = null;
+            }
         });
         buildUi();
         if (hasPermission()) loadVideos(); else requestPermission();
@@ -201,12 +212,14 @@ public class MainActivity extends AppCompatActivity {
     private void showVideoMenu(View anchor, Video v) {
         PopupMenu menu = new PopupMenu(this, anchor);
         menu.getMenu().add("Play");
+        menu.getMenu().add("Rename");
         menu.getMenu().add("Share");
         menu.getMenu().add("Details");
         menu.getMenu().add("Delete");
         menu.setOnMenuItemClickListener(item -> {
             switch (item.getTitle().toString()) {
                 case "Play": play(v); return true;
+                case "Rename": showRenameDialog(v); return true;
                 case "Share":
                     Intent share = new Intent(Intent.ACTION_SEND); share.setType("video/*"); share.putExtra(Intent.EXTRA_STREAM, v.uri);
                     share.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION); startActivity(Intent.createChooser(share, "Share video")); return true;
@@ -217,6 +230,83 @@ public class MainActivity extends AppCompatActivity {
             return false;
         });
         menu.show();
+    }
+
+    private void showRenameDialog(Video video) {
+        EditText input = new EditText(this);
+        input.setSingleLine(true);
+        input.setText(video.filename);
+        input.setSelection(input.length());
+        input.setHint("New video filename");
+        new androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("Rename video")
+            .setMessage("Keep the file extension (for example .mp4) to preserve the video format.")
+            .setView(input)
+            .setNegativeButton("Cancel", (d, w) -> {})
+            .setPositiveButton("Rename", (d, w) -> {
+                String filename = input.getText().toString().trim();
+                if (filename.isEmpty() || filename.equals(".") || filename.equals("..") ||
+                    filename.contains("/") || filename.contains("\\\\") || filename.indexOf('\0') >= 0) {
+                    Toast.makeText(this, "Enter a valid video filename", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                if (filename.equals(video.filename)) return;
+                pendingRename = video;
+                pendingRenameFilename = filename;
+                requestRenamePermission(video, filename);
+            }).show();
+    }
+
+    private void requestRenamePermission(Video video, String filename) {
+        try {
+            if (Build.VERSION.SDK_INT >= 30) {
+                renamePermissionRequest.launch(new IntentSenderRequest.Builder(
+                    MediaStore.createWriteRequest(getContentResolver(), java.util.Collections.singletonList(video.uri)).getIntentSender()).build());
+            } else {
+                performRename(video, filename);
+            }
+        } catch (SecurityException e) {
+            if (Build.VERSION.SDK_INT >= 29 && e instanceof RecoverableSecurityException) {
+                try {
+                    renamePermissionRequest.launch(new IntentSenderRequest.Builder(
+                        ((RecoverableSecurityException)e).getUserAction().getActionIntent().getIntentSender()).build());
+                } catch (Exception ignored) {
+                    pendingRename = null; pendingRenameFilename = null;
+                    Toast.makeText(this, "Rename permission required", Toast.LENGTH_SHORT).show();
+                }
+            } else {
+                pendingRename = null; pendingRenameFilename = null;
+                Toast.makeText(this, "Rename permission required", Toast.LENGTH_SHORT).show();
+            }
+        } catch (Exception e) {
+            pendingRename = null; pendingRenameFilename = null;
+            Toast.makeText(this, "Could not request rename permission", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void performRename(Video video, String filename) {
+        try {
+            String displayTitle = filename;
+            int dot = displayTitle.lastIndexOf('.');
+            if (dot > 0) displayTitle = displayTitle.substring(0, dot);
+            ContentValues values = new ContentValues();
+            values.put(MediaStore.Video.Media.DISPLAY_NAME, filename);
+            values.put(MediaStore.Video.Media.TITLE, displayTitle);
+            int updated = getContentResolver().update(video.uri, values, null, null);
+            if (updated > 0) {
+                Toast.makeText(this, "Video renamed successfully", Toast.LENGTH_SHORT).show();
+                loadVideos();
+            } else {
+                Toast.makeText(this, "Could not rename this video", Toast.LENGTH_SHORT).show();
+            }
+        } catch (SecurityException e) {
+            Toast.makeText(this, "Rename permission was not granted", Toast.LENGTH_SHORT).show();
+        } catch (Exception e) {
+            Toast.makeText(this, "Could not rename this video", Toast.LENGTH_SHORT).show();
+        } finally {
+            pendingRename = null;
+            pendingRenameFilename = null;
+        }
     }
 
     private void confirmDelete(Video v) {
