@@ -18,7 +18,9 @@ import android.os.Bundle;
 import android.provider.MediaStore;
 import android.util.Size;
 import android.view.Gravity;
-import android.view.WindowManager;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowCompat;
+import androidx.core.view.WindowInsetsCompat;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageView;
@@ -56,7 +58,7 @@ public class MainActivity extends AppCompatActivity {
 
     @Override protected void onCreate(Bundle state) {
         super.onCreate(state);
-        getWindow().setDecorFitsSystemWindows(true);
+        WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
         getWindow().setStatusBarColor(bg);
         getWindow().setNavigationBarColor(bg);
         permissionRequest = registerForActivityResult(new ActivityResultContracts.RequestPermission(), ok -> {
@@ -91,6 +93,12 @@ public class MainActivity extends AppCompatActivity {
         root.setOrientation(1);
         root.setPadding(dp(16), dp(4), dp(16), 0);
         root.setBackgroundColor(bg);
+        ViewCompat.setOnApplyWindowInsetsListener(root, (view, insets) -> {
+            int topInset = insets.getInsets(WindowInsetsCompat.Type.statusBars()).top;
+            int bottomInset = insets.getInsets(WindowInsetsCompat.Type.navigationBars()).bottom;
+            view.setPadding(dp(16), topInset + dp(4), dp(16), bottomInset);
+            return insets;
+        });
         LinearLayout top = new LinearLayout(this);
         top.setGravity(Gravity.CENTER_VERTICAL);
         TextView brand = label("NEXUSPLAY", 15, mint, true);
