@@ -58,7 +58,9 @@ public class PlayerActivity extends AppCompatActivity {
             }
             @Override public void onScaleEnd(ScaleGestureDetector d) { scaling=false; }
         });
-        playerView.setOnTouchListener((v, event) -> {
+        View gestureSurface = playerView.getVideoSurfaceView();
+        if (gestureSurface == null) gestureSurface = playerView;
+        gestureSurface.setOnTouchListener((v, event) -> {
             scaleDetector.onTouchEvent(event);
             if (event.getPointerCount() > 1 || scaling) return true;
             if (event.getAction() == MotionEvent.ACTION_DOWN) { startX=event.getX(); startY=event.getY(); return true; }
