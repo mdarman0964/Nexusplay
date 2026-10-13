@@ -300,7 +300,17 @@ public class MainActivity extends AppCompatActivity {
                 Toast.makeText(this, "Could not rename this video", Toast.LENGTH_SHORT).show();
             }
         } catch (SecurityException e) {
-            Toast.makeText(this, "Rename permission was not granted", Toast.LENGTH_SHORT).show();
+            if (Build.VERSION.SDK_INT >= 29 && Build.VERSION.SDK_INT < 30 && e instanceof RecoverableSecurityException) {
+                try {
+                    renamePermissionRequest.launch(new IntentSenderRequest.Builder(
+                        ((RecoverableSecurityException)e).getUserAction().getActionIntent().getIntentSender()).build());
+                    return;
+                } catch (Exception ignored) {
+                    Toast.makeText(this, "Rename permission was not granted", Toast.LENGTH_SHORT).show();
+                }
+            } else {
+                Toast.makeText(this, "Rename permission was not granted", Toast.LENGTH_SHORT).show();
+            }
         } catch (Exception e) {
             Toast.makeText(this, "Could not rename this video", Toast.LENGTH_SHORT).show();
         } finally {
