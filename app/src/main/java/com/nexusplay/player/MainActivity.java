@@ -127,6 +127,8 @@ public class MainActivity extends AppCompatActivity {
         root.addView(count, lp(-1, dp(28)));
         ScrollView scroll = new ScrollView(this);
         scroll.setFillViewport(false);
+        scroll.setClipToPadding(false);
+        scroll.setVerticalScrollBarEnabled(false);
         list = new LinearLayout(this); list.setOrientation(1); list.setPadding(0, dp(4), 0, dp(16));
         scroll.addView(list); root.addView(scroll, new LinearLayout.LayoutParams(-1, 0, 1));
         TextView footer = label("PRIVATE BY DESIGN  •  NO ADS", 10, muted, true);
@@ -192,9 +194,19 @@ public class MainActivity extends AppCompatActivity {
             thumb.image.setBackground(round(0xFF24213A, dp(11)));
             try {
                 Bitmap bitmap;
-                if (Build.VERSION.SDK_INT >= 29) bitmap = getContentResolver().loadThumbnail(v.uri, new Size(dp(112), dp(76)), null);
-                else bitmap = MediaStore.Video.Thumbnails.getThumbnail(getContentResolver(), Long.parseLong(v.uri.getLastPathSegment()), MediaStore.Video.Thumbnails.MINI_KIND, null);
-                thumb.image.setImageBitmap(bitmap);
+                if (Build.VERSION.SDK_INT >= 29) {
+                    bitmap = getContentResolver().loadThumbnail(v.uri, new Size(dp(224), dp(152)), null);
+                } else {
+                    bitmap = MediaStore.Video.Thumbnails.getThumbnail(getContentResolver(),
+                        Long.parseLong(v.uri.getLastPathSegment()), MediaStore.Video.Thumbnails.MINI_KIND, null);
+                }
+                if (bitmap != null) {
+                    thumb.image.setImageBitmap(bitmap);
+                    thumb.fallback.setVisibility(View.GONE);
+                } else {
+                    thumb.image.setImageDrawable(null);
+                    thumb.fallback.setVisibility(View.VISIBLE);
+                }
             } catch (Exception ignored) {
                 thumb.image.setImageDrawable(null);
                 thumb.image.setBackground(round(0xFF24213A, dp(11)));
@@ -381,7 +393,7 @@ public class MainActivity extends AppCompatActivity {
             super(activity); setOrientation(VERTICAL); setGravity(Gravity.CENTER);
             android.widget.FrameLayout frame = new android.widget.FrameLayout(activity);
             frame.addView(image, new android.widget.FrameLayout.LayoutParams(-1,-1));
-            fallback.setGravity(Gravity.CENTER); fallback.setBackground(round(0xFF24213A, dp(11)));
+            fallback.setGravity(Gravity.CENTER); fallback.setBackground(round(0xFF24213A, dp(11))); fallback.setVisibility(View.GONE);
             frame.addView(fallback, new android.widget.FrameLayout.LayoutParams(-1,-1));
             addView(frame, new LinearLayout.LayoutParams(-1,-1));
         }
