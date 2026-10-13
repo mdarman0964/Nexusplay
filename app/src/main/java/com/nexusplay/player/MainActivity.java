@@ -299,6 +299,8 @@ public class MainActivity extends AppCompatActivity {
             } else {
                 Toast.makeText(this, "Could not rename this video", Toast.LENGTH_SHORT).show();
             }
+            pendingRename = null;
+            pendingRenameFilename = null;
         } catch (SecurityException e) {
             if (Build.VERSION.SDK_INT >= 29 && Build.VERSION.SDK_INT < 30 && e instanceof RecoverableSecurityException) {
                 try {
@@ -313,7 +315,6 @@ public class MainActivity extends AppCompatActivity {
             }
         } catch (Exception e) {
             Toast.makeText(this, "Could not rename this video", Toast.LENGTH_SHORT).show();
-        } finally {
             pendingRename = null;
             pendingRenameFilename = null;
         }
