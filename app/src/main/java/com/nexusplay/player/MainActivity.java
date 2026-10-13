@@ -114,7 +114,7 @@ public class MainActivity extends AppCompatActivity {
         root.addView(search, lp(-1, dp(48)));
 
         LinearLayout tabs = new LinearLayout(this);
-        tabs.setOrientation(0); tabs.setPadding(0, dp(6), 0, dp(6));
+        tabs.setOrientation(0); tabs.setPadding(0, dp(3), 0, dp(3));
         String[] tabNames = {"All videos", "Folders", "Recent"};
         for (int i = 0; i < tabNames.length; i++) {
             String name = tabNames[i];
