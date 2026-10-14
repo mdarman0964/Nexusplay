@@ -101,27 +101,38 @@ public class MainActivity extends AppCompatActivity {
         });
         LinearLayout top = new LinearLayout(this);
         top.setGravity(Gravity.CENTER_VERTICAL);
-        TextView brand = label("NEXUSPLAY", 15, mint, true);
-        top.addView(brand, new LinearLayout.LayoutParams(0, dp(42), 1));
-        TextView local = label("●  LOCAL LIBRARY", 10, muted, true);
-        top.addView(local);
+        TextView brand = label("NEXUSPLAY", 16, mint, true);
+        brand.setGravity(Gravity.CENTER_VERTICAL);
+        top.addView(brand, new LinearLayout.LayoutParams(0, dp(42), 1f));
+
+        TextView searchButton = label("⌕", 26, white, true);
+        searchButton.setGravity(Gravity.CENTER);
+        searchButton.setBackground(round(panel, dp(14)));
+        top.addView(searchButton, lp(dp(42), dp(42)));
         root.addView(top, lp(-1, dp(52)));
 
         search = new EditText(this);
-        search.setSingleLine(true); search.setTextSize(15); search.setTextColor(white); search.setHintTextColor(muted);
-        search.setHint("Search videos or folders"); search.setPadding(dp(16), 0, dp(16), 0);
+        search.setSingleLine(true);
+        search.setTextSize(14);
+        search.setTextColor(white);
+        search.setHintTextColor(muted);
+        search.setHint("Search videos or folders");
+        search.setPadding(dp(16), 0, dp(16), 0);
         search.setBackground(round(panel, dp(14)));
         search.setVisibility(View.GONE);
-        root.addView(search, lp(-1, dp(48)));
-        TextView searchButton = label("⌕", 28, white, true);
-        searchButton.setGravity(Gravity.CENTER);
-        searchButton.setBackground(round(panel, dp(12)));
-        LinearLayout.LayoutParams searchButtonParams = lp(dp(42), dp(42));
-        searchButtonParams.rightMargin = dp(10);
-        top.addView(searchButton, 1, searchButtonParams);
+        LinearLayout.LayoutParams searchLp = lp(-1, dp(46));
+        searchLp.bottomMargin = dp(6);
+        root.addView(search, searchLp);
+
         searchButton.setOnClickListener(v -> {
             if (search.getVisibility() != View.VISIBLE) {
+                androidx.transition.TransitionManager.beginDelayedTransition(root, new androidx.transition.AutoTransition().setDuration(220));
                 search.setVisibility(View.VISIBLE);
+                search.setAlpha(0f);
+                search.setTranslationY(-dp(8));
+                search.animate().alpha(1f).translationY(0f).setDuration(220).start();
+                searchButton.setText("✕");
+                searchButton.setTextSize(18);
                 search.requestFocus();
                 ((android.view.inputmethod.InputMethodManager)getSystemService(INPUT_METHOD_SERVICE))
                     .showSoftInput(search, android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT);
@@ -130,8 +141,13 @@ public class MainActivity extends AppCompatActivity {
                 search.clearFocus();
                 ((android.view.inputmethod.InputMethodManager)getSystemService(INPUT_METHOD_SERVICE))
                     .hideSoftInputFromWindow(search.getWindowToken(), 0);
-                search.setVisibility(View.GONE);
-                render();
+                search.animate().alpha(0f).translationY(-dp(8)).setDuration(180).withEndAction(() -> {
+                    androidx.transition.TransitionManager.beginDelayedTransition(root, new androidx.transition.AutoTransition().setDuration(180));
+                    search.setVisibility(View.GONE);
+                    searchButton.setText("⌕");
+                    searchButton.setTextSize(26);
+                    render();
+                }).start();
             }
         });
 
@@ -159,7 +175,7 @@ public class MainActivity extends AppCompatActivity {
         scroll.setVerticalScrollBarEnabled(false);
         list = new LinearLayout(this); list.setOrientation(1); list.setPadding(0, dp(4), 0, dp(16));
         scroll.addView(list); root.addView(scroll, new LinearLayout.LayoutParams(-1, 0, 1));
-        TextView footer = label("PRIVATE BY DESIGN  •  NO ADS", 10, muted, true);
+        TextView footer = label("PRIVATE BY ARMAN  •  NO ADS", 10, muted, true);
         footer.setGravity(Gravity.CENTER); root.addView(footer, lp(-1, dp(30)));
         setContentView(root);
         search.addTextChangedListener(new android.text.TextWatcher() {

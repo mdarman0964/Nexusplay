@@ -1,0 +1,6 @@
+{
+  "name": "Nexusplay",
+  "description": "A modern local video player for Android with folder navigation, gesture controls, and Media3 ExoPlayer playback.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
