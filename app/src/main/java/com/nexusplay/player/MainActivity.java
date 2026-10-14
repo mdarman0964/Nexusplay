@@ -111,7 +111,29 @@ public class MainActivity extends AppCompatActivity {
         search.setSingleLine(true); search.setTextSize(15); search.setTextColor(white); search.setHintTextColor(muted);
         search.setHint("Search videos or folders"); search.setPadding(dp(16), 0, dp(16), 0);
         search.setBackground(round(panel, dp(14)));
+        search.setVisibility(View.GONE);
         root.addView(search, lp(-1, dp(48)));
+        TextView searchButton = label("⌕", 28, white, true);
+        searchButton.setGravity(Gravity.CENTER);
+        searchButton.setBackground(round(panel, dp(12)));
+        LinearLayout.LayoutParams searchButtonParams = lp(dp(42), dp(42));
+        searchButtonParams.rightMargin = dp(10);
+        top.addView(searchButton, 1, searchButtonParams);
+        searchButton.setOnClickListener(v -> {
+            if (search.getVisibility() != View.VISIBLE) {
+                search.setVisibility(View.VISIBLE);
+                search.requestFocus();
+                ((android.view.inputmethod.InputMethodManager)getSystemService(INPUT_METHOD_SERVICE))
+                    .showSoftInput(search, android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT);
+            } else {
+                search.setText("");
+                search.clearFocus();
+                ((android.view.inputmethod.InputMethodManager)getSystemService(INPUT_METHOD_SERVICE))
+                    .hideSoftInputFromWindow(search.getWindowToken(), 0);
+                search.setVisibility(View.GONE);
+                render();
+            }
+        });
 
         LinearLayout tabs = new LinearLayout(this);
         tabs.setOrientation(0); tabs.setPadding(0, dp(3), 0, dp(3));
