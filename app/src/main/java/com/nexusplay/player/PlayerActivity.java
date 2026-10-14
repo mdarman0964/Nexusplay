@@ -107,7 +107,10 @@ public class PlayerActivity extends AppCompatActivity {
                     } else if (selectedIndex < 0) {
                         selectedIndex = Math.max(0, Math.min(startIndex, items.size() - 1));
                     }
-                    controller.setMediaItems(items, selectedIndex, 0L);
+                    android.content.SharedPreferences resumePrefs = getSharedPreferences("nexusplay_resume", MODE_PRIVATE);
+                    String resumeKey = "position_" + uri.toString();
+                    long resumePosition = Math.max(0L, resumePrefs.getLong(resumeKey, 0L));
+                    controller.setMediaItems(items, selectedIndex, resumePosition);
                     controller.prepare();
                     controller.play();
                 }
@@ -131,7 +134,22 @@ public class PlayerActivity extends AppCompatActivity {
     private final Runnable hideHint=()->{if(gestureHint!=null)gestureHint.setVisibility(View.GONE);};
     private int dp(int n){return (int)(n*getResources().getDisplayMetrics().density+.5f);}
 
-    @Override protected void onStop() { super.onStop(); getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON); }
+    @Override protected void onStop() {
+        saveResumePosition();
+        super.onStop();
+        getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+    }
+
+    private void saveResumePosition() {
+        if (controller == null || controller.getCurrentMediaItem() == null) return;
+        Uri currentUri = controller.getCurrentMediaItem().localConfiguration == null
+            ? null : controller.getCurrentMediaItem().localConfiguration.uri;
+        if (currentUri == null) return;
+        long position = Math.max(0L, controller.getCurrentPosition());
+        getSharedPreferences("nexusplay_resume", MODE_PRIVATE).edit()
+            .putLong("position_" + currentUri.toString(), position)
+            .apply();
+    }
     @Override protected void onDestroy() {
         if (playerView!=null) playerView.setPlayer(null);
         if (controllerFuture!=null) MediaController.releaseFuture(controllerFuture);
