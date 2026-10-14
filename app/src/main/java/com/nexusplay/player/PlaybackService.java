@@ -23,11 +23,64 @@ public class PlaybackService extends MediaSessionService {
     private ExoPlayer player;
     private MediaSession mediaSession;
 
+    private boolean isEmulatorOrSwPreferred() {
+        android.content.SharedPreferences prefs = getSharedPreferences("nexusplay_resume", MODE_PRIVATE);
+        if (prefs.getBoolean("prefer_sw_decoder", false)) {
+            return true;
+        }
+        String fingerprint = Build.FINGERPRINT;
+        String model = Build.MODEL;
+        String hardware = Build.HARDWARE;
+        String product = Build.PRODUCT;
+        return (fingerprint != null && (fingerprint.startsWith("generic") || fingerprint.startsWith("unknown")))
+                || (model != null && (model.contains("google_sdk") || model.contains("Emulator") || model.contains("Android SDK built for x86")))
+                || (hardware != null && (hardware.contains("goldfish") || hardware.contains("ranchu")))
+                || (product != null && (product.contains("sdk") || product.contains("google_sdk") || product.contains("emulator")));
+    }
+
     @Override public void onCreate() {
         super.onCreate();
-        player = new ExoPlayer.Builder(this).build();
+        androidx.media3.exoplayer.mediacodec.MediaCodecSelector codecSelector =
+                (mimeType, requiresSecureDecoder, requiresTunnelingDecoder) -> {
+                    java.util.List<androidx.media3.exoplayer.mediacodec.MediaCodecInfo> decoders =
+                            androidx.media3.exoplayer.mediacodec.MediaCodecSelector.DEFAULT
+                                    .getDecoderInfos(mimeType, requiresSecureDecoder, requiresTunnelingDecoder);
+                    if (decoders == null || decoders.isEmpty()) {
+                        return java.util.Collections.emptyList();
+                    }
+                    if (isEmulatorOrSwPreferred()) {
+                        java.util.ArrayList<androidx.media3.exoplayer.mediacodec.MediaCodecInfo> swDecoders =
+                                new java.util.ArrayList<>();
+                        for (androidx.media3.exoplayer.mediacodec.MediaCodecInfo info : decoders) {
+                            if (info.softwareOnly) {
+                                swDecoders.add(info);
+                            }
+                        }
+                        if (!swDecoders.isEmpty()) {
+                            return swDecoders;
+                        }
+                    }
+                    return decoders;
+                };
+
+        androidx.media3.exoplayer.DefaultRenderersFactory renderersFactory =
+                new androidx.media3.exoplayer.DefaultRenderersFactory(this)
+                        .setMediaCodecSelector(codecSelector)
+                        .setExtensionRendererMode(androidx.media3.exoplayer.DefaultRenderersFactory.EXTENSION_RENDERER_MODE_OFF)
+                        .setEnableDecoderFallback(true);
+
+        player = new ExoPlayer.Builder(this, renderersFactory).build();
         player.setSeekParameters(SeekParameters.EXACT);
         player.setAudioAttributes(new AudioAttributes.Builder().setUsage(C.USAGE_MEDIA).setContentType(C.AUDIO_CONTENT_TYPE_MOVIE).build(), true);
+        player.addListener(new androidx.media3.common.Player.Listener() {
+            @Override
+            public void onPlayerError(androidx.media3.common.PlaybackException error) {
+                // Graceful fallback to retry
+                try {
+                    player.prepare();
+                } catch (Exception ignored) {}
+            }
+        });
         Intent open = new Intent(this, MainActivity.class);
         PendingIntent pending = PendingIntent.getActivity(this, 0, open, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 
